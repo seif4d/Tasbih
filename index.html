@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سبّح وارتقِ ⚔️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- 
+        هذا تطبيق ويب للتسبيح والذكر بأسلوب التلعيب (Gamification).
+        تم تطويره باستخدام HTML, CSS, و JavaScript فقط (Pure JS).
+        المطور: مساعدك الذكي 🖤🔥🥷🏻
+    -->
+
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --bg-dark: #0a091a;
+            --primary-glow: #8a2be2; /* بنفسجي متوهج */
+            --secondary-glow: #00bfff; /* أزرق سماوي */
+            --text-light: #e0e0e0;
+            --text-gold: #ffd700;
+            --fire: #ff4500;
+            --font-main: 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* --- Body & Main Layout --- */
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* --- Dynamic Background --- */
+        #dynamic-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, var(--bg-dark) 70%);
+            z-index: 1;
+            transition: background 2s ease-in-out;
+        }
+
+        #stars-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none; /* مهم للسماح بالتفاعل مع العناصر الأخرى */
+        }
+        
+        /* --- Header & Title --- */
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 8px var(--primary-glow), 0 0 12px var(--secondary-glow);
+            margin-bottom: 10px;
+        }
+
+        /* --- Counter --- */
+        .counter-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.2);
+        }
+
+        #counter {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--text-gold);
+            text-shadow: 0 0 10px var(--text-gold), 0 0 20px var(--fire);
+        }
+
+        #current-dhikr {
+            font-size: 1.2rem;
+            margin-top: 5px;
+            color: var(--secondary-glow);
+            transition: opacity 0.3s;
+            height: 25px; /* لتثبيت الارتفاع */
+        }
+
+        /* --- Dhikr Buttons --- */
+        .dhikr-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .dhikr-btn {
+            background: transparent;
+            border: 2px solid var(--primary-glow);
+            color: var(--text-light);
+            padding: 15px 10px;
+            font-size: 1.1rem;
+            font-family: var(--font-main);
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px var(--primary-glow), inset 0 0 5px rgba(138, 43, 226, 0.5);
+        }
+
+        .dhikr-btn:hover {
+            background: var(--primary-glow);
+            color: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px var(--primary-glow);
+        }
+
+        .dhikr-btn:active {
+            transform: translateY(-1px) scale(0.98);
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        /* --- Daily Quest --- */
+        .daily-quest {
+            background: rgba(0, 191, 255, 0.1);
+            border: 1px solid var(--secondary-glow);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+            transition: all 0.5s ease;
+        }
+
+        .daily-quest.completed {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--text-gold);
+            color: var(--text-gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        /* --- Achievements --- */
+        .achievements-container {
+            min-height: 50px;
+        }
+        
+        #achievements {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .achievement {
+            font-size: 2rem;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+            filter: grayscale(1);
+        }
+
+        .achievement.unlocked {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: grayscale(0);
+            text-shadow: 0 0 10px var(--text-gold);
+        }
+
+        /* --- Stats Bar (Footer) --- */
+        .stats-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid var(--primary-glow);
+            z-index: 100;
+        }
+
+        .stat {
+            font-size: 0.9rem;
+        }
+
+        .stat span {
+            font-weight: 700;
+            color: var(--secondary-glow);
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            #counter {
+                font-size: 4rem;
+            }
+            .dhikr-btn {
+                font-size: 1rem;
+                padding: 12px 8px;
+            }
+            .daily-quest {
+                font-size: 1rem;
+            }
+            .stat {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Background & Particle Canvas -->
+    <div id="dynamic-bg"></div>
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- Main App Content -->
+    <div id="app-container">
+        
+        <header class="header">
+            <h1>سبّح وارتقِ ⚔️</h1>
+        </header>
+
+        <main>
+            <div class="counter-container">
+                <div id="counter">0</div>
+                <div id="current-dhikr">ابدأ التسبيح</div>
+            </div>
+
+            <div class="daily-quest" id="daily-quest-container">
+                <span id="daily-quest-text">أكمل 100 تسبيحة اليوم 🔥</span>
+            </div>
+
+            <div class="dhikr-buttons">
+                <button class="dhikr-btn" data-dhikr="سبحان الله">سبحان الله</button>
+                <button class="dhikr-btn" data-dhikr="الحمد لله">الحمد لله</button>
+                <button class="dhikr-btn" data-dhikr="الله أكبر">الله أكبر</button>
+                <button class="dhikr-btn" data-dhikr="لا إله إلا الله">لا إله إلا الله</button>
+            </div>
+
+            <div class="achievements-container">
+                <div id="achievements">
+                    <!-- Achievements will be populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stats Bar at the bottom -->
+    <footer class="stats-bar">
+        <div class="stat">اليوم: <span id="stat-today">0</span></div>
+        <div class="stat">هذا الأسبوع: <span id="stat-week">0</span></div>
+        <div class="stat">هذا الشهر: <span id="stat-month">0</span></div>
+        <div class="stat">الإجمالي: <span id="stat-total">0</span></div>
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DOM Elements ---
+            const counterEl = document.getElementById('counter');
+            const currentDhikrEl = document.getElementById('current-dhikr');
+            const dhikrButtons = document.querySelectorAll('.dhikr-btn');
+            const dailyQuestContainer = document.getElementById('daily-quest-container');
+            const dailyQuestText = document.getElementById('daily-quest-text');
+            const achievementsEl = document.getElementById('achievements');
+            const statTodayEl = document.getElementById('stat-today');
+            const statWeekEl = document.getElementById('stat-week');
+            const statMonthEl = document.getElementById('stat-month');
+            const statTotalEl = document.getElementById('stat-total');
+            const dynamicBg = document.getElementById('dynamic-bg');
+            const canvas = document.getElementById('stars-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // --- Gamification & State Variables ---
+            let state = {
+                totalCount: 0,
+                todayCount: 0,
+                weekCount: 0,
+                monthCount: 0,
+                lastUpdate: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+                unlockedAchievements: []
+            };
+
+            const DAILY_QUEST_GOAL = 100;
+            const ACHIEVEMENTS = [
+                { milestone: 100, icon: '🌟', title: 'النجمة الأولى' },
+                { milestone: 500, icon: '✨', title: 'الوميض المقدس' },
+                { milestone: 1000, icon: '💎', title: 'جوهرة الذاكرين' },
+                { milestone: 5000, icon: '👑', title: 'تاج العابدين' },
+                { milestone: 10000, icon: '🌌', title: 'سيد المجرة' }
+            ];
+
+            // --- Particle Effect System ---
+            let particles = [];
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            class Particle {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.size = Math.random() * 5 + 1;
+                    this.speedX = Math.random() * 3 - 1.5;
+                    this.speedY = Math.random() * 3 - 1.5;
+                    this.color = Math.random() > 0.5 ? 'rgba(138, 43, 226, 0.8)' : 'rgba(0, 191, 255, 0.8)';
+                    this.life = 100;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.size > 0.2) this.size -= 0.1;
+                    this.life--;
+                }
+                draw() {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            function createParticles(e) {
+                const xPos = e.clientX;
+                const yPos = e.clientY;
+                for (let i = 0; i < 15; i++) {
+                    particles.push(new Particle(xPos, yPos));
+                }
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                    if (particles[i].life < 1) {
+                        particles.splice(i, 1);
+                        i--;
+                    }
+                }
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+
+
+            // --- Data Persistence ---
+            function saveData() {
+                localStorage.setItem('tasbeehGameState', JSON.stringify(state));
+            }
+
+            function loadData() {
+                const savedState = localStorage.getItem('tasbeehGameState');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                    checkDateResets();
+                }
+                renderAchievements();
+                updateUI();
+            }
+
+            // --- Date & Counter Reset Logic ---
+            function getWeekNumber(d) {
+                d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+                var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                return [d.getUTCFullYear(), weekNo];
+            }
+
+            function checkDateResets() {
+                const today = new Date();
+                const lastUpdateDate = new Date(state.lastUpdate);
+
+                if (today.toISOString().slice(0, 10) !== state.lastUpdate) {
+                    state.todayCount = 0; // Reset daily count
+                }
+                
+                const [currentYear, currentWeek] = getWeekNumber(today);
+                const [lastYear, lastWeek] = getWeekNumber(lastUpdateDate);
+                if (currentYear !== lastYear || currentWeek !== lastWeek) {
+                    state.weekCount = 0; // Reset weekly count
+                }
+                
+                if (today.getMonth() !== lastUpdateDate.getMonth() || today.getFullYear() !== lastUpdateDate.getFullYear()) {
+                    state.monthCount = 0; // Reset monthly count
+                }
+
+                state.lastUpdate = today.toISOString().slice(0, 10);
+            }
+
+
+            // --- Core Logic ---
+            function handleDhikrClick(e) {
+                const dhikrText = e.target.dataset.dhikr;
+                
+                // Update state
+                state.totalCount++;
+                state.todayCount++;
+                state.weekCount++;
+                state.monthCount++;
+
+                // Trigger effects & UI updates
+                currentDhikrEl.textContent = dhikrText;
+                createParticles(e);
+                updateUI();
+                checkDailyQuest();
+                checkAchievements();
+                updateBackground();
+                
+                // Save progress
+                saveData();
+            }
+
+            // --- UI Update Functions ---
+            function updateUI() {
+                counterEl.textContent = state.todayCount;
+                statTodayEl.textContent = state.todayCount;
+                statWeekEl.textContent = state.weekCount;
+                statMonthEl.textContent = state.monthCount;
+                statTotalEl.textContent = state.totalCount;
+            }
+
+            function checkDailyQuest() {
+                if (state.todayCount >= DAILY_QUEST_GOAL && !dailyQuestContainer.classList.contains('completed')) {
+                    dailyQuestContainer.classList.add('completed');
+                    dailyQuestText.textContent = 'أحسنت! أتممت مهمة اليوم ✅';
+                } else if (state.todayCount < DAILY_QUEST_GOAL) {
+                    dailyQuestContainer.classList.remove('completed');
+                    dailyQuestText.textContent = `أكمل ${DAILY_QUEST_GOAL} تسبيحة اليوم 🔥 (${state.todayCount}/${DAILY_QUEST_GOAL})`;
+                }
+            }
+
+            function renderAchievements() {
+                achievementsEl.innerHTML = '';
+                ACHIEVEMENTS.forEach(ach => {
+                    const achEl = document.createElement('div');
+                    achEl.classList.add('achievement');
+                    achEl.textContent = ach.icon;
+                    achEl.title = `${ach.title} (${ach.milestone} ذكر)`;
+                    if (state.unlockedAchievements.includes(ach.milestone)) {
+                        achEl.classList.add('unlocked');
+                    }
+                    achievementsEl.appendChild(achEl);
+                });
+            }
+
+            function checkAchievements() {
+                ACHIEVEMENTS.forEach(ach => {
+                    if (state.totalCount >= ach.milestone && !state.unlockedAchievements.includes(ach.milestone)) {
+                        state.unlockedAchievements.push(ach.milestone);
+                        // Re-render to show the unlocked achievement with effect
+                        renderAchievements(); 
+                        // You could add a notification pop-up here for better UX
+                    }
+                });
+            }
+
+            function updateBackground() {
+                // Background becomes lighter and more vibrant with progress
+                // We use totalCount for long-term progression
+                const progress = Math.min(state.totalCount / 1000, 1); // Cap progress at 1000 for full effect
+                const bgLightness = 10 + (progress * 20); // from 10% to 30%
+                const gradientSize = 70 - (progress * 30); // from 70% to 40%
+                dynamicBg.style.background = `radial-gradient(ellipse at center, hsl(255, 50%, ${bgLightness}%) 0%, var(--bg-dark) ${gradientSize}%)`;
+            }
+
+            // --- Initial Setup ---
+            dhikrButtons.forEach(button => {
+                button.addEventListener('click', handleDhikrClick);
+            });
+
+            loadData(); // Load saved data on start
+        });
+    </script>
+</body>
+</html>
